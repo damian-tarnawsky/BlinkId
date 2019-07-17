@@ -82,6 +82,53 @@ BlinkID.prototype.scanWithCamera = function (successCallback, errorCallback, ove
         errorCallback, 'BlinkIDScanner', 'scanWithCamera', [overlaySettings, recognizerCollection, licenses]);
 };
 
+BlinkID.prototype.processRawData = function (successCallback, errorCallback, overlaySettings, recognizerCollection, licenses, rawData) {
+    if (errorCallback == null) {
+        errorCallback = function () {
+        };
+    }
+
+    if (typeof errorCallback != "function") {
+        console.log("BlinkIDScanner.processRawData failure: failure parameter not a function");
+        throw new Error("BlinkIDScanner.processRawData failure: failure parameter not a function");
+        return;
+    }
+
+    if (typeof successCallback != "function") {
+        console.log("BlinkIDScanner.processRawData failure: success callback parameter must be a function");
+        throw new Error("BlinkIDScanner.processRawData failure: success callback parameter must be a function");
+        return;
+    }
+
+    // first invalidate old results
+    for (var i = 0; i < recognizerCollection.recognizerArray[i].length; ++i ) {
+        recognizerCollection.recognizerArray[i].result = null;
+    }
+
+    exec(
+        function internalCallback(scanningResult) { 
+        var cancelled = scanningResult.cancelled;
+
+        if (cancelled) {
+            successCallback(true);
+        } else {
+            var results = scanningResult.resultList;
+            if (results.length != recognizerCollection.recognizerArray.length) {
+                console.log("INTERNAL ERROR: native plugin returned wrong number of results!");
+                throw new Error("INTERNAL ERROR: native plugin returned wrong number of results!");
+                errorCallback(new Error("INTERNAL ERROR: native plugin returned wrong number of results!"));
+            } else {
+                for (var i = 0; i < results.length; ++i) {
+                    // native plugin must ensure types match
+                    recognizerCollection.recognizerArray[i].result = recognizerCollection.recognizerArray[i].createResultFromNative(results[i]);
+                }
+                successCallback(false);
+            }
+        }    
+    },
+    errorCallback, 'BlinkIDScanner', 'processRawData', [overlaySettings, recognizerCollection, licenses, rawData]);
+};
+
 // COMMON CLASSES
 
 /**

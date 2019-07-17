@@ -43,6 +43,7 @@ const int COMPRESSED_IMAGE_QUALITY = 90;
 
 @property (nonatomic, strong) MBRecognizerCollection *recognizerCollection;
 @property (nonatomic) id<MBRecognizerRunnerViewController> scanningViewController;
+@property (nonatomic) id<MBRecognizerRunner> recognizerRunner;
 
 @end
 
@@ -67,6 +68,29 @@ const int COMPRESSED_IMAGE_QUALITY = 90;
 }
 
 #pragma mark - Main
+/**
+ * Starts the process Raw data
+ */
+- (void)processRawData:(CDVInvokedUrlCommand *)command {
+    [self setLastCommand:command];
+
+    NSDictionary *jsonOverlaySettings = [self sanitizeDictionary:[self.lastCommand argumentAtIndex:0]];
+    NSDictionary *jsonRecognizerCollection = [self sanitizeDictionary:[self.lastCommand argumentAtIndex:1]];
+    NSDictionary *jsonLicenses = [self sanitizeDictionary:[self.lastCommand argumentAtIndex:2]];
+
+    [self setLicense:jsonLicenses];
+
+    self.recognizerCollection = [[MBRecognizerSerializers sharedInstance] deserializeRecognizerCollection:jsonRecognizerCollection];
+
+    self.recognizerRunner = [[MBRecognizerRunner alloc] initWithRecognizerCollection:self.recognizerCollection];
+    self.recognizerRunner.scanningRecognizerRunnerDelegate = self;
+
+    dispatch_queue_t _serialQueue = dispatch_queue_create("com.microblink.DirectAPI-sample", DISPATCH_QUEUE_SERIAL);
+    dispatch_async(_serialQueue, ^{
+        [self.recognizerRunner processString:self.lastCommand argumentAtIndex:3];
+    });
+}
+
 - (void)scanWithCamera:(CDVInvokedUrlCommand *)command {
 
     [self setLastCommand:command];
@@ -105,6 +129,14 @@ const int COMPRESSED_IMAGE_QUALITY = 90;
     }
 }
 
+#pragma mark - MBScanningRecognizerRunnerDelegate
+- (void)recognizerRunner:(nonnull MBRecognizerRunner *)recognizerRunner didFinishScanningWithState:(MBRecognizerResultState)state {
+    if (self.blinkInputRecognizer.result.resultState == MBRecognizerResultStateValid) {
+        //
+    }
+}
+
+#pragma mark - MBRecognizerRunnerViewControllerDelegate
 - (void)overlayViewControllerDidFinishScanning:(MBOverlayViewController *)overlayViewController state:(MBRecognizerResultState)state {
     if (state != MBRecognizerResultStateEmpty) {
         [overlayViewController.recognizerRunnerViewController pauseScanning];

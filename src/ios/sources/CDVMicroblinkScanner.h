@@ -23,6 +23,11 @@
 - (void)scanWithCamera:(CDVInvokedUrlCommand *)command;
 
 /**
+ * Starts the process Raw data
+ */
+- (void)processRawData:(CDVInvokedUrlCommand *)command;
+
+/**
  * Returns successful recognition
  */
 - (void)returnResults:(NSArray *)results cancelled:(BOOL)cancelled;
