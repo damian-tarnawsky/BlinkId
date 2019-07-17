@@ -33,7 +33,7 @@ const NSString *CANCELLED = @"cancelled";
 const int COMPRESSED_IMAGE_QUALITY = 90;
 
 
-@interface CDVPlugin () <MBOverlayViewControllerDelegate>
+@interface CDVPlugin () <MBOverlayViewControllerDelegate, MBStringProcessingRecognizerRunnerDelegate>
 
 @property (nonatomic, retain) CDVInvokedUrlCommand *lastCommand;
 
@@ -43,7 +43,7 @@ const int COMPRESSED_IMAGE_QUALITY = 90;
 
 @property (nonatomic, strong) MBRecognizerCollection *recognizerCollection;
 @property (nonatomic) id<MBRecognizerRunnerViewController> scanningViewController;
-@property (nonatomic) id<MBRecognizerRunner> recognizerRunner;
+@property (nonatomic) MBRecognizerRunner *recognizerRunner;
 
 @end
 
@@ -87,7 +87,7 @@ const int COMPRESSED_IMAGE_QUALITY = 90;
 
     dispatch_queue_t _serialQueue = dispatch_queue_create("com.microblink.DirectAPI-sample", DISPATCH_QUEUE_SERIAL);
     dispatch_async(_serialQueue, ^{
-        [self.recognizerRunner processString:self.lastCommand argumentAtIndex:3];
+        [self.recognizerRunner processString:[self.lastCommand argumentAtIndex:3]];
     });
 }
 
@@ -130,10 +130,17 @@ const int COMPRESSED_IMAGE_QUALITY = 90;
 }
 
 #pragma mark - MBScanningRecognizerRunnerDelegate
-- (void)recognizerRunner:(nonnull MBRecognizerRunner *)recognizerRunner didFinishScanningWithState:(MBRecognizerResultState)state {
-    if (self.blinkInputRecognizer.result.resultState == MBRecognizerResultStateValid) {
-        //
-    }
+//- (void)recognizerRunner:(nonnull MBRecognizerRunner *)recognizerRunner didFinishScanningWithState:(MBRecognizerResultState)state {
+//    if (state == MBRecognizerResultStateValid) {
+//        dispatch_async(dispatch_get_main_queue(), ^{
+//            // All UI interaction needs to be done on main thread
+//            NSLog(@"didFinishScanningWithState");
+//        });
+//    }
+//}
+
+- (void)recognizerRunner:(MBRecognizerRunner *)recognizerRunner didFinishProcessingString:(NSString *)string {
+    
 }
 
 #pragma mark - MBRecognizerRunnerViewControllerDelegate
