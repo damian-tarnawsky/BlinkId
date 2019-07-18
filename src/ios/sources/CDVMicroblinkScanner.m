@@ -130,17 +130,8 @@ const int COMPRESSED_IMAGE_QUALITY = 90;
 }
 
 #pragma mark - MBScanningRecognizerRunnerDelegate
-//- (void)recognizerRunner:(nonnull MBRecognizerRunner *)recognizerRunner didFinishScanningWithState:(MBRecognizerResultState)state {
-//    if (state == MBRecognizerResultStateValid) {
-//        dispatch_async(dispatch_get_main_queue(), ^{
-//            // All UI interaction needs to be done on main thread
-//            NSLog(@"didFinishScanningWithState");
-//        });
-//    }
-//}
-
 - (void)recognizerRunner:(MBRecognizerRunner *)recognizerRunner didFinishProcessingString:(NSString *)string {
-    
+    NSLog(@"%@", string);
 }
 
 #pragma mark - MBRecognizerRunnerViewControllerDelegate
