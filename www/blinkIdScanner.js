@@ -133,7 +133,7 @@ BlinkID.prototype.processRawText = function (successCallback, errorCallback, ove
         errorCallback, 'BlinkIDScanner', 'processRawText', [overlaySettings, recognizerCollection, licenses, data]);
 };
 
-BlinkID.prototype.cancelRawText = function(successCallback, errorCallback) {
+BlinkID.prototype.cancelRawTextProcessing = function(successCallback, errorCallback) {
     exec(successCallback, errorCallback, 'BlinkIDScanner', 'cancelRawTextProcessing', [])
 }
 
