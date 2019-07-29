@@ -87,10 +87,10 @@ const int COMPRESSED_IMAGE_QUALITY = 90;
 }
 
 - (void)cancelRawTextProcessing:(CDVInvokedUrlCommand *)command {
-    [sellf.recognizerRunner cancelProcessing];
+    [self.recognizerRunner cancelProcessing];
 }
 
-- (void)dismissCamera:(CDVInvokedUrlCommand *)command {
+- (void)hideCameraOverly:(CDVInvokedUrlCommand *)command {
     [[self viewController] dismissViewControllerAnimated:YES completion:nil];
     self.recognizerCollection = nil;
     self.scanningViewController = nil;
