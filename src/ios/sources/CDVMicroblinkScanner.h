@@ -33,6 +33,11 @@
 - (void)processRawText:(CDVInvokedUrlCommand *)command;
 
 /**
+ * Cancel Processing raw text data
+ */
+- (void)cancelRawTextProcessing:(CDVInvokedUrlCommand *)command;
+
+/**
  * Returns successful recognition
  */
 - (void)returnResults:(NSArray *)results cancelled:(BOOL)cancelled;
