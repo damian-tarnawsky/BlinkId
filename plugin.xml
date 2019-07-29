@@ -422,8 +422,8 @@
                 <param name="ios-package" value="CDVMicroblinkScanner" />
             </feature>
         </config-file>
-        
-        <hook type="before_plugin_install" src="scripts/initIOSFramework.sh"/>
+        <!--
+        <hook type="before_plugin_install" src="scripts/initIOSFramework.sh"/> -->
     </platform>
     
 </plugin>
