@@ -42,8 +42,11 @@ const int COMPRESSED_IMAGE_QUALITY = 90;
 @interface CDVMicroblinkScanner ()
 
 @property (nonatomic, strong) MBRecognizerCollection *recognizerCollection;
+@property (nonatomic, strong) MBRecognizerCollection *recognizerCollectionDirectApi;
 @property (nonatomic) id<MBRecognizerRunnerViewController> scanningViewController;
-@property (nonatomic) MBRecognizerRunner *recognizerRunner;
+
+@property (nonatomic, strong) MBPdf417Recognizer *pdf417Recognizer;
+@property (nonatomic, strong) MBRecognizerRunner *recognizerRunner;
 
 @end
 
@@ -68,10 +71,7 @@ const int COMPRESSED_IMAGE_QUALITY = 90;
 }
 
 #pragma mark - Main
-/**
- * Starts the process Raw data
- */
-- (void)processRawData:(CDVInvokedUrlCommand *)command {
+- (void)processRawText:(CDVInvokedUrlCommand *)command {
     [self setLastCommand:command];
 
     NSDictionary *jsonOverlaySettings = [self sanitizeDictionary:[self.lastCommand argumentAtIndex:0]];
@@ -80,15 +80,23 @@ const int COMPRESSED_IMAGE_QUALITY = 90;
 
     [self setLicense:jsonLicenses];
 
-    self.recognizerCollection = [[MBRecognizerSerializers sharedInstance] deserializeRecognizerCollection:jsonRecognizerCollection];
+    self.recognizerCollectionDirectApi = [[MBRecognizerSerializers sharedInstance] deserializeRecognizerCollection:jsonRecognizerCollection];
 
-    self.recognizerRunner = [[MBRecognizerRunner alloc] initWithRecognizerCollection:self.recognizerCollection];
+    self.recognizerRunner = [[MBRecognizerRunner alloc] initWithRecognizerCollection:self.recognizerCollectionDirectApi];
     self.recognizerRunner.scanningRecognizerRunnerDelegate = self;
+}
 
-    dispatch_queue_t _serialQueue = dispatch_queue_create("com.microblink.DirectAPI-sample", DISPATCH_QUEUE_SERIAL);
-    dispatch_async(_serialQueue, ^{
-        [self.recognizerRunner processString:[self.lastCommand argumentAtIndex:3]];
-    });
+- (void)dismissCamera:(CDVInvokedUrlCommand *)command {
+    [[self viewController] dismissViewControllerAnimated:YES completion:nil];
+    self.recognizerCollection = nil;
+    self.scanningViewController = nil;
+
+    NSDictionary *resultDict = @{
+        CANCELLED : [NSNumber numberWithBool:YES]
+    };
+
+    CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:resultDict];
+    [self.commandDelegate sendPluginResult:result callbackId:self.lastCommand.callbackId];
 }
 
 - (void)scanWithCamera:(CDVInvokedUrlCommand *)command {
@@ -129,12 +137,7 @@ const int COMPRESSED_IMAGE_QUALITY = 90;
     }
 }
 
-#pragma mark - MBScanningRecognizerRunnerDelegate
-- (void)recognizerRunner:(MBRecognizerRunner *)recognizerRunner didFinishProcessingString:(NSString *)string {
-    NSLog(@"%@", string);
-}
-
-#pragma mark - MBRecognizerRunnerViewControllerDelegate
+#pragma mark - MBOverlayViewControllerDelegate
 - (void)overlayViewControllerDidFinishScanning:(MBOverlayViewController *)overlayViewController state:(MBRecognizerResultState)state {
     if (state != MBRecognizerResultStateEmpty) {
         [overlayViewController.recognizerRunnerViewController pauseScanning];
@@ -172,4 +175,25 @@ const int COMPRESSED_IMAGE_QUALITY = 90;
     [self.commandDelegate sendPluginResult:result callbackId:self.lastCommand.callbackId];
 }
 
+#pragma mark - MBOverlayViewControllerDelegate
+- (void)recognizerRunner:(nonnull MBRecognizerRunner *)recognizerRunner didFinishProcessingString:(nonnull NSString *)string {
+    dispatch_async(dispatch_get_main_queue(), ^{
+
+        NSMutableArray *jsonResults = [[NSMutableArray alloc] initWithCapacity:self.recognizerCollection.recognizerList.count];
+        for (NSUInteger i = 0; i < self.recognizerCollectionDirectApi.recognizerList.count; ++i) {
+            [jsonResults addObject:[[self.recognizerCollectionDirectApi.recognizerList objectAtIndex:i] serializeResult]];
+        }
+
+        NSDictionary *resultDict = @{
+            CANCELLED: [NSNumber numberWithBool:NO],
+            RESULT_LIST: jsonResults
+        };
+
+        CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:resultDict];
+        [self.commandDelegate sendPluginResult:result callbackId:self.lastCommand.callbackId];
+
+        self.recognizerCollectionDirectApi = nil;
+        self.recognizerRunner = nil;
+    });
+}
 @end

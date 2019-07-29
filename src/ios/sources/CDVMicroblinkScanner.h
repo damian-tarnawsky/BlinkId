@@ -23,9 +23,14 @@
 - (void)scanWithCamera:(CDVInvokedUrlCommand *)command;
 
 /**
- * Starts the process Raw data
+ * Stop the scanning process and hide overlay
  */
-- (void)processRawData:(CDVInvokedUrlCommand *)command;
+- (void)hideCameraOverly:(CDVInvokedUrlCommand *)command;
+
+/**
+ * Process raw text data
+ */
+- (void)processRawText:(CDVInvokedUrlCommand *)command;
 
 /**
  * Returns successful recognition
