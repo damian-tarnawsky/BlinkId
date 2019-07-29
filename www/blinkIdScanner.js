@@ -83,7 +83,7 @@ BlinkID.prototype.scanWithCamera = function (successCallback, errorCallback, ove
 };
 
 BlinkID.prototype.hideCameraOverly = function(successCallback, errorCallback) {
-    exec(successCallback, errorCallback, 'BlinkIDScanner', 'scanWithCamera', [])
+    exec(successCallback, errorCallback, 'BlinkIDScanner', 'hideCameraOverly', [])
 }
 
 BlinkID.prototype.processRawText = function (successCallback, errorCallback, overlaySettings, recognizerCollection, licenses, data) {
