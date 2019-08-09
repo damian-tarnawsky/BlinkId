@@ -83,7 +83,9 @@ const int COMPRESSED_IMAGE_QUALITY = 90;
     self.recognizerCollectionDirectApi = [[MBRecognizerSerializers sharedInstance] deserializeRecognizerCollection:jsonRecognizerCollection];
 
     self.recognizerRunner = [[MBRecognizerRunner alloc] initWithRecognizerCollection:self.recognizerCollectionDirectApi];
-    self.recognizerRunner.scanningRecognizerRunnerDelegate = self;
+    self.recognizerRunner.stringProcessingRecognizerRunnerDelegate = self;
+    
+    [self.recognizerRunner processString:[self.lastCommand argumentAtIndex:3]];
 }
 
 - (void)cancelRawTextProcessing:(CDVInvokedUrlCommand *)command {
