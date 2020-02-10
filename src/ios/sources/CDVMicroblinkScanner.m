@@ -33,7 +33,7 @@ const NSString *CANCELLED = @"cancelled";
 const int COMPRESSED_IMAGE_QUALITY = 90;
 
 
-@interface CDVPlugin () <MBOverlayViewControllerDelegate>
+@interface CDVPlugin () <MBOverlayViewControllerDelegate, MBStringProcessingRecognizerRunnerDelegate>
 
 @property (nonatomic, retain) CDVInvokedUrlCommand *lastCommand;
 
@@ -42,7 +42,11 @@ const int COMPRESSED_IMAGE_QUALITY = 90;
 @interface CDVMicroblinkScanner ()
 
 @property (nonatomic, strong) MBRecognizerCollection *recognizerCollection;
+@property (nonatomic, strong) MBRecognizerCollection *recognizerCollectionDirectApi;
 @property (nonatomic) id<MBRecognizerRunnerViewController> scanningViewController;
+
+@property (nonatomic, strong) MBPdf417Recognizer *pdf417Recognizer;
+@property (nonatomic, strong) MBRecognizerRunner *recognizerRunner;
 
 @end
 
@@ -67,6 +71,40 @@ const int COMPRESSED_IMAGE_QUALITY = 90;
 }
 
 #pragma mark - Main
+- (void)processRawText:(CDVInvokedUrlCommand *)command {
+    [self setLastCommand:command];
+
+    NSDictionary *jsonOverlaySettings = [self sanitizeDictionary:[self.lastCommand argumentAtIndex:0]];
+    NSDictionary *jsonRecognizerCollection = [self sanitizeDictionary:[self.lastCommand argumentAtIndex:1]];
+    NSDictionary *jsonLicenses = [self sanitizeDictionary:[self.lastCommand argumentAtIndex:2]];
+
+    [self setLicense:jsonLicenses];
+
+    self.recognizerCollectionDirectApi = [[MBRecognizerSerializers sharedInstance] deserializeRecognizerCollection:jsonRecognizerCollection];
+
+    self.recognizerRunner = [[MBRecognizerRunner alloc] initWithRecognizerCollection:self.recognizerCollectionDirectApi];
+    self.recognizerRunner.stringProcessingRecognizerRunnerDelegate = self;
+    
+    [self.recognizerRunner processString:[self.lastCommand argumentAtIndex:3]];
+}
+
+- (void)cancelRawTextProcessing:(CDVInvokedUrlCommand *)command {
+    [self.recognizerRunner cancelProcessing];
+}
+
+- (void)hideCameraOverly:(CDVInvokedUrlCommand *)command {
+    [[self viewController] dismissViewControllerAnimated:YES completion:nil];
+    self.recognizerCollection = nil;
+    self.scanningViewController = nil;
+
+    NSDictionary *resultDict = @{
+        CANCELLED : [NSNumber numberWithBool:YES]
+    };
+
+    CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:resultDict];
+    [self.commandDelegate sendPluginResult:result callbackId:self.lastCommand.callbackId];
+}
+
 - (void)scanWithCamera:(CDVInvokedUrlCommand *)command {
 
     [self setLastCommand:command];
@@ -105,6 +143,7 @@ const int COMPRESSED_IMAGE_QUALITY = 90;
     }
 }
 
+#pragma mark - MBOverlayViewControllerDelegate
 - (void)overlayViewControllerDidFinishScanning:(MBOverlayViewController *)overlayViewController state:(MBRecognizerResultState)state {
     if (state != MBRecognizerResultStateEmpty) {
         [overlayViewController.recognizerRunnerViewController pauseScanning];
@@ -142,4 +181,25 @@ const int COMPRESSED_IMAGE_QUALITY = 90;
     [self.commandDelegate sendPluginResult:result callbackId:self.lastCommand.callbackId];
 }
 
+#pragma mark - MBOverlayViewControllerDelegate
+- (void)recognizerRunner:(nonnull MBRecognizerRunner *)recognizerRunner didFinishProcessingString:(nonnull NSString *)string {
+    dispatch_async(dispatch_get_main_queue(), ^{
+
+        NSMutableArray *jsonResults = [[NSMutableArray alloc] initWithCapacity:self.recognizerCollection.recognizerList.count];
+        for (NSUInteger i = 0; i < self.recognizerCollectionDirectApi.recognizerList.count; ++i) {
+            [jsonResults addObject:[[self.recognizerCollectionDirectApi.recognizerList objectAtIndex:i] serializeResult]];
+        }
+
+        NSDictionary *resultDict = @{
+            CANCELLED: [NSNumber numberWithBool:NO],
+            RESULT_LIST: jsonResults
+        };
+
+        CDVPluginResult *result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:resultDict];
+        [self.commandDelegate sendPluginResult:result callbackId:self.lastCommand.callbackId];
+
+        self.recognizerCollectionDirectApi = nil;
+        self.recognizerRunner = nil;
+    });
+}
 @end
