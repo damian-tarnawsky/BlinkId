@@ -25,6 +25,13 @@ fi
 
 cd blinkid-ios || exit 1
 
+cd Microblink.framework
+mv MicroBlink MicroBlink_all_archs
+lipo -remove x86_64 MicroBlink_all_archs -o MicroBlink_some_archs
+lipo -remove i386 MicroBlink_some_archs -o MicroBlink
+rm MicroBlink_all_archs MicroBlink_some_archs
+cd ..
+
 mv -f Microblink.framework ../Microblink.framework
 mv -f Microblink.bundle ../Microblink.bundle
 
