@@ -3,8 +3,8 @@
 # enter into ios project folder
 HERE="$(dirname "$(test -L "$0" && readlink "$0" || echo "$0")")"
 pushd "${HERE}/../src/ios/" > /dev/null
-
-LINK='https://github.com/BlinkID/blinkid-ios/releases/download/v4.10.0/blinkid-ios_v4.10.0.zip'
+echo "test LINKing"
+LINK='https://github.com/BlinkID/blinkid-ios/releases/download/v4.10.0/blinkid-ios_test_v4.10.0.zip'
 FILENAME='blinkid-ios.zip'
 
 # check if Microblink framework and bundle already exist
@@ -22,7 +22,7 @@ fi
 if [ -d 'Microblink.framework' ] ; then
     rm -rf Microblink.framework && echo "Removing Microblink.framework"
 fi 
-
+echo "test cd blinkid-ios"
 cd blinkid-ios || exit 1
 
 cd Microblink.framework
